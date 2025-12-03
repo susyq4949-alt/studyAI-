@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 학습시키기 - AI는 어떻게 결정을 내릴까?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .instruction-box {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+
+        .instruction-box h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .training-area {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .category-section {
+            margin-bottom: 25px;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .category-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .count-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .drawing-canvas {
+            width: 100%;
+            height: 200px;
+            border: 3px dashed #cbd5e1;
+            border-radius: 10px;
+            background: white;
+            cursor: crosshair;
+            margin-bottom: 10px;
+        }
+
+        .canvas-active {
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .test-area {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #bbf7d0;
+        }
+
+        .test-canvas {
+            width: 100%;
+            height: 300px;
+            border: 3px solid #10b981;
+            border-radius: 10px;
+            background: white;
+            cursor: crosshair;
+            margin-bottom: 15px;
+        }
+
+        .result-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            min-height: 100px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .result-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .prediction {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .confidence {
+            text-align: center;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .sample-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sample-item {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .stats-section {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+            border-left: 5px solid #f59e0b;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e5e7eb;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .emoji-display {
+            font-size: 3em;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .tip-box {
+            background: #dbeafe;
+            border-left: 5px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .tip-box strong {
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI 학습시키기</h1>
+            <p class="subtitle">AI는 어떻게 결정을 내릴까?</p>
+        </div>
+
+        <div class="instruction-box">
+            <h2>📚 학습 목표</h2>
+            <p>이 수업에서는 AI가 데이터로부터 어떻게 학습하는지 직접 체험해봅니다. 두 가지 다른 도형을 그려서 AI를 학습시키고, AI가 새로운 그림을 올바르게 분류할 수 있는지 테스트해보세요!</p>
+            
+            <div class="tip-box">
+                <strong>💡 팁:</strong> AI가 더 정확하게 학습하려면 각 카테고리마다 최소 5개 이상의 다양한 예시가 필요해요!
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 학습 영역 -->
+            <div class="training-area">
+                <h2 style="margin-bottom: 20px; color: #667eea;">🎨 1단계: AI 학습시키기</h2>
+                
+                <!-- 카테고리 A -->
+                <div class="category-section">
+                    <div class="category-header">
+                        <span class="category-title">➖ 카테고리 A (가로선)</span>
+                        <span class="count-badge" id="countA">0개</span>
+                    </div>
+                    <canvas id="canvasA" class="drawing-canvas"></canvas>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="addTrainingSample('A')">✓ 학습 추가</button>
+                        <button class="btn-secondary" onclick="clearCanvas('canvasA')">🗑️ 지우기</button>
+                    </div>
+                    <div class="sample-grid" id="samplesA"></div>
+                </div>
+
+                <!-- 카테고리 B -->
+                <div class="category-section">
+                    <div class="category-header">
+                        <span class="category-title">| 카테고리 B (세로선)</span>
+                        <span class="count-badge" id="countB">0개</span>
+                    </div>
+                    <canvas id="canvasB" class="drawing-canvas"></canvas>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="addTrainingSample('B')">✓ 학습 추가</button>
+                        <button class="btn-secondary" onclick="clearCanvas('canvasB')">🗑️ 지우기</button>
+                    </div>
+                    <div class="sample-grid" id="samplesB"></div>
+                </div>
+
+                <button class="btn-success" onclick="trainModel()" style="width: 100%; margin-top: 20px; font-size: 1.2em;">
+                    🚀 AI 학습 시작하기
+                </button>
+                
+                <button class="btn-danger" onclick="resetTraining()" style="width: 100%; margin-top: 10px; font-size: 1.1em;">
+                    🔄 학습 데이터 초기화
+                </button>
+            </div>
+
+            <!-- 테스트 영역 -->
+            <div class="test-area">
+                <h2 style="margin-bottom: 20px; color: #10b981;">🧪 2단계: AI 테스트하기</h2>
+                <p style="margin-bottom: 15px; color: #666;">학습한 AI가 새로운 그림을 어떻게 분류하는지 확인해보세요!</p>
+                
+                <canvas id="testCanvas" class="test-canvas"></canvas>
+                
+                <div class="button-group">
+                    <button class="btn-success" onclick="predictDrawing()">🔍 AI 예측하기</button>
+                    <button class="btn-secondary" onclick="clearCanvas('testCanvas')">🗑️ 지우기</button>
+                </div>
+
+                <div class="result-box" id="resultBox">
+                    <div class="result-title">예측 결과</div>
+                    <div id="predictionResult" style="color: #999; text-align: center; padding: 30px;">
+                        먼저 AI를 학습시킨 후, 여기에 그림을 그려보세요!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 통계 섹션 -->
+        <div class="stats-section">
+            <h2 style="color: #f59e0b; margin-bottom: 10px;">📊 학습 통계</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-number" id="totalSamples">0</div>
+                    <div class="stat-label">총 학습 데이터</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="totalPredictions">0</div>
+                    <div class="stat-label">예측 횟수</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="modelAccuracy">0%</div>
+                    <div class="stat-label">모델 준비도</div>
+                </div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%;">
+                    <span id="progressText">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let trainingData = { A: [], B: [] };
+        let isModelTrained = false;
+        let predictionCount = 0;
+        let currentDrawing = { canvas: null, ctx: null };
+
+        // 캔버스 초기화
+        function initCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = e.clientX - rect.left;
+                lastY = e.clientY - rect.top;
+                canvas.classList.add('canvas-active');
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                lastX = x;
+                lastY = y;
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                isDrawing = false;
+                canvas.classList.remove('canvas-active');
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                isDrawing = false;
+                canvas.classList.remove('canvas-active');
+            });
+
+            // 터치 이벤트 지원
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                lastX = touch.clientX - rect.left;
+                lastY = touch.clientY - rect.top;
+                canvas.classList.add('canvas-active');
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                lastX = x;
+                lastY = y;
+            });
+
+            canvas.addEventListener('touchend', () => {
+                isDrawing = false;
+                canvas.classList.remove('canvas-active');
+            });
+        }
+
+        // 캔버스 지우기
+        function clearCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 학습 샘플 추가
+        function addTrainingSample(category) {
+            const canvasId = 'canvas' + category;
+            const canvas = document.getElementById(canvasId);
+            const imageData = canvas.toDataURL();
+            
+            // 빈 캔버스 체크
+            const ctx = canvas.getContext('2d');
+            const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let hasDrawing = false;
+            for (let i = 3; i < pixelData.length; i += 4) {
+                if (pixelData[i] > 0) {
+                    hasDrawing = true;
+                    break;
+                }
+            }
+            
+            if (!hasDrawing) {
+                alert('먼저 그림을 그려주세요!');
+                return;
+            }
+
+            trainingData[category].push(imageData);
+            
+            // 샘플 썸네일 표시
+            const samplesDiv = document.getElementById('samples' + category);
+            const img = document.createElement('img');
+            img.src = imageData;
+            img.className = 'sample-item';
+            samplesDiv.appendChild(img);
+            
+            // 카운트 업데이트
+            document.getElementById('count' + category).textContent = trainingData[category].length + '개';
+            
+            // 캔버스 지우기
+            clearCanvas(canvasId);
+            
+            // 통계 업데이트
+            updateStats();
+            
+            // 피드백
+            showFeedback('✓ 학습 데이터가 추가되었습니다!', 'success');
+        }
+
+        // 모델 학습
+        function trainModel() {
+            const totalA = trainingData.A.length;
+            const totalB = trainingData.B.length;
+            
+            if (totalA < 3 || totalB < 3) {
+                alert('각 카테고리마다 최소 3개 이상의 학습 데이터가 필요합니다!\n\n현재 상태:\n➖ 카테고리 A: ' + totalA + '개\n| 카테고리 B: ' + totalB + '개');
+                return;
+            }
+            
+            // 학습 시뮬레이션
+            isModelTrained = true;
+            showFeedback('🎉 AI 학습이 완료되었습니다! 이제 테스트해보세요!', 'success');
+            updateStats();
+        }
+
+        // 학습 데이터 초기화
+        function resetTraining() {
+            if (confirm('모든 학습 데이터를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) {
+                // 학습 데이터 초기화
+                trainingData.A = [];
+                trainingData.B = [];
+                
+                // 모델 상태 초기화
+                isModelTrained = false;
+                
+                // 예측 횟수 초기화
+                predictionCount = 0;
+                
+                // 샘플 이미지 완전히 초기화
+                const samplesA = document.getElementById('samplesA');
+                const samplesB = document.getElementById('samplesB');
+                
+                if (samplesA) {
+                    while (samplesA.firstChild) {
+                        samplesA.removeChild(samplesA.firstChild);
+                    }
+                }
+                
+                if (samplesB) {
+                    while (samplesB.firstChild) {
+                        samplesB.removeChild(samplesB.firstChild);
+                    }
+                }
+                
+                // 카운트 초기화
+                document.getElementById('countA').textContent = '0개';
+                document.getElementById('countB').textContent = '0개';
+                
+                // 캔버스 초기화
+                clearCanvas('canvasA');
+                clearCanvas('canvasB');
+                clearCanvas('testCanvas');
+                
+                // 예측 결과 초기화
+                document.getElementById('predictionResult').innerHTML = '<div style="color: #999; text-align: center; padding: 30px;">먼저 AI를 학습시킨 후, 여기에 그림을 그려보세요!</div>';
+                
+                // 통계 완전히 초기화
+                document.getElementById('totalSamples').textContent = '0';
+                document.getElementById('totalPredictions').textContent = '0';
+                document.getElementById('modelAccuracy').textContent = '0%';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('progressText').textContent = '0%';
+                
+                showFeedback('✓ 모든 학습 데이터가 초기화되었습니다.', 'success');
+            }
+        }
+
+        // 예측 수행
+        function predictDrawing() {
+            if (!isModelTrained) {
+                alert('먼저 AI를 학습시켜주세요!');
+                return;
+            }
+            
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 빈 캔버스 체크
+            const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let hasDrawing = false;
+            for (let i = 3; i < pixelData.length; i += 4) {
+                if (pixelData[i] > 0) {
+                    hasDrawing = true;
+                    break;
+                }
+            }
+            
+            if (!hasDrawing) {
+                alert('먼저 그림을 그려주세요!');
+                return;
+            }
+            
+            // 간단한 분류 로직 (실제로는 더 복잡한 ML 알고리즘 사용)
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const prediction = classifyImage(imageData);
+            
+            predictionCount++;
+            
+            // 결과 표시
+            displayPrediction(prediction);
+            updateStats();
+        }
+
+        // 이미지 분류 (단순화된 버전)
+        function classifyImage(imageData) {
+            // 가로선 vs 세로선 구분
+            const data = imageData.data;
+            let horizontalPixels = 0;
+            let verticalPixels = 0;
+            
+            const width = imageData.width;
+            const height = imageData.height;
+            
+            // 각 행과 열의 픽셀 수 계산
+            const rowCounts = new Array(height).fill(0);
+            const colCounts = new Array(width).fill(0);
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] > 0) { // 알파 채널 확인 (그려진 픽셀)
+                    const pixelIndex = i / 4;
+                    const x = pixelIndex % width;
+                    const y = Math.floor(pixelIndex / width);
+                    
+                    rowCounts[y]++;
+                    colCounts[x]++;
+                }
+            }
+            
+            // 가로 집중도 계산 (중간 행들에 픽셀이 많으면 가로선)
+            const midHeight = Math.floor(height / 2);
+            for (let y = midHeight - 30; y < midHeight + 30 && y < height; y++) {
+                if (y >= 0) horizontalPixels += rowCounts[y];
+            }
+            
+            // 세로 집중도 계산 (중간 열들에 픽셀이 많으면 세로선)
+            const midWidth = Math.floor(width / 2);
+            for (let x = midWidth - 30; x < midWidth + 30 && x < width; x++) {
+                if (x >= 0) verticalPixels += colCounts[x];
+            }
+            
+            // 분류 결정
+            const isHorizontal = horizontalPixels > verticalPixels;
+            const confidence = Math.min(95, Math.max(75, Math.abs(horizontalPixels - verticalPixels) / 10 + 70));
+            const category = isHorizontal ? 'A' : 'B';
+            
+            return {
+                category: category,
+                confidence: Math.round(confidence),
+                categoryName: category === 'A' ? '➖ 가로선' : '| 세로선'
+            };
+        }
+
+        // 예측 결과 표시
+        function displayPrediction(prediction) {
+            const resultDiv = document.getElementById('predictionResult');
+            resultDiv.innerHTML = `
+                <div class="emoji-display">${prediction.category === 'A' ? '➖' : '|'}</div>
+                <div class="prediction">${prediction.categoryName}</div>
+                <div class="confidence">신뢰도: ${prediction.confidence}%</div>
+            `;
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            const totalSamples = trainingData.A.length + trainingData.B.length;
+            document.getElementById('totalSamples').textContent = totalSamples;
+            document.getElementById('totalPredictions').textContent = predictionCount;
+            
+            let accuracy = 0;
+            if (totalSamples >= 6) {
+                accuracy = Math.min(100, Math.round((totalSamples / 10) * 100));
+            }
+            document.getElementById('modelAccuracy').textContent = accuracy + '%';
+            
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            progressBar.style.width = accuracy + '%';
+            progressText.textContent = accuracy + '%';
+        }
+
+        // 피드백 표시
+        function showFeedback(message, type) {
+            // 간단한 알림 (실제로는 더 나은 UI 사용 가능)
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : '#ef4444'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease-out;
+            `;
+            feedback.textContent = message;
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => feedback.remove(), 300);
+            }, 3000);
+        }
+
+        // 페이지 로드 시 캔버스 초기화
+        window.addEventListener('load', () => {
+            initCanvas('canvasA');
+            initCanvas('canvasB');
+            initCanvas('testCanvas');
+            updateStats();
+        });
+
+        // 애니메이션 정의
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
